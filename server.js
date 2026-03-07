@@ -59,7 +59,7 @@ async function callOpenAI(sys, user) {
 
 async function callGemini(sys, user) {
   const d = await httpsPost('generativelanguage.googleapis.com',
-    '/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY, {},
+    '/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY, {},
     { contents:[{parts:[{text: sys + '\n\nユーザーの投稿: ' + user}]}], generationConfig:{temperature:0.9,maxOutputTokens:1200} });
   return parseAI(d.candidates?.[0]?.content?.parts?.[0]?.text || '[]');
 }
