@@ -141,92 +141,101 @@ function parseAI(raw) {
 }
 
 // ===== AI呼び出し =====
-async function callGemini(sys, userMsg) {
+async function callGemini(prompt) {
+  const reqBody = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.85,
+      maxOutputTokens: 1500,
+      // JSON出力を強制。Geminiが確実にJSONのみ返す
+      responseMimeType: 'application/json'
+    }
+  };
+
+  // ★ デバッグ: 送信プロンプトをログ出力（Renderのログで確認可能）
+  console.log('[gemini-prompt]\n' + prompt);
+
   const d = await httpsPost(
     'generativelanguage.googleapis.com',
     `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
     {},
-    {
-      // ★ systemInstruction を使い、システムプロンプトを明確に分離
-      systemInstruction: { parts: [{ text: sys }] },
-      contents: [{ parts: [{ text: userMsg }] }],
-      generationConfig: {
-        temperature: 0.9,
-        maxOutputTokens: 1200,
-        // ★ JSON出力を強制
-        responseMimeType: 'application/json'
-      }
-    }
+    reqBody
   );
-  const text = d.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-  return parseAI(text);
+
+  const raw = d.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+
+  // ★ デバッグ: Geminiの生レスポンスをログ出力
+  console.log('[gemini-raw-response]\n' + raw);
+
+  return parseAI(raw);
 }
 
-async function callAI(sys, userMsg) {
+async function callAI(prompt) {
   if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY が設定されていません');
-  return callGemini(sys, userMsg);
+  return callGemini(prompt);
 }
 
 // ===== プロンプト =====
-// ★構造修正:
-//   replySystemPrompt(mode, interests) → system ロール（静的な指示）
-//   replyUserMsg(postText)             → user ロール（AIが返信すべき投稿内容）
-// AIはuserロールのメッセージを「返信対象」として処理するため、
-// 投稿テキストはsystemではなくuserに渡すのが正しい設計。
-function replySystemPrompt(mode, interests) {
+// ★ 設計方針:
+//   投稿テキストをプロンプトの最初に置く（Geminiは冒頭の情報を最も重視する）
+//   例文に具体的な内容を入れない（例文がテンプレートとして使われるのを防ぐ）
+//   1つのシンプルなプロンプトにまとめる
+
+function buildReplyPrompt(postText, mode, interests) {
   const int = interests.length ? interests.join('、') : '未設定';
 
   const modeConfig = {
     influencer: {
-      desc: '熱狂的なSNSユーザー3〜5人',
-      style: 'ユーザーの投稿を絶賛・共感・拡散したがる反応。投稿の具体的なキーワードや話題に必ず言及し、バズりそうなコメントで盛り上げる。likes:100〜99999。',
+      chars: '熱狂的なSNSユーザー3〜5人',
+      rule:  '投稿の言葉・話題・感情に直接触れて盛り上げるコメント。バズりそうな表現で。likes:500〜99999。',
     },
     mental: {
-      desc: '優しく共感してくれる3〜4人',
-      style: 'ユーザーの投稿の悩みや気持ちに寄り添い、具体的な内容を受け止めて温かく返す。「それは辛かったね」「わかるよ」など共感の言葉を含める。likes:10〜2000。',
+      chars: '共感力の高い優しいユーザー3〜4人',
+      rule:  '投稿の具体的な悩みや気持ちを受け止め、温かく寄り添うコメント。likes:10〜2000。',
     },
     debate: {
-      desc: '賛成派・反対派・中立派が混在する3〜5人',
-      style: 'ユーザーの投稿の主張や意見に対して、それぞれ異なる立場から具体的に反論・賛同・補足する。投稿のキーワードや論点を必ず拾うこと。likes:10〜5000。',
+      chars: '賛成派・反対派・中立派が混在する3〜5人',
+      rule:  '投稿の主張・意見に対し異なる立場から具体的に議論するコメント。likes:50〜5000。',
     },
     legend: {
-      desc: '歴史上の偉人3〜4人（実在の人物）',
-      style: 'ユーザーの投稿テーマに関連した名言や哲学を交えて返信する。投稿の内容・テーマに具体的に言及し、その偉人らしい視点でコメントする。likes:1000〜100000。',
+      chars: '歴史上の実在した偉人3〜4人',
+      rule:  '投稿のテーマに関連した名言・哲学を引用しつつ返信するコメント。likes:1000〜100000。',
     },
   };
 
   const cfg = modeConfig[mode] || modeConfig.influencer;
 
-  return `あなたは日本語SNS「いどばた」のAIキャラクター生成エンジンです。
+  // ★ 投稿テキストを最初に、しかも目立つ形で配置
+  // ★ 例文は空のテンプレートのみ（具体的な内容は書かない）
+  return `## 返信対象の投稿
+「${postText}」
+
+## タスク
+上の投稿に対して、${cfg.chars}が日本語でリプライするJSONを生成してください。
 ユーザーの趣味: ${int}
 
-【役割】${cfg.desc}として、ユーザーのSNS投稿に返信コメントを生成する。
-【返信スタイル】${cfg.style}
+## 各キャラのコメントのルール
+- 投稿内の具体的なキーワード・話題・感情に必ず触れること
+- ${cfg.rule}
+- 自然な日本語口語。SNSらしい短め〜中程度の長さ
 
-【絶対ルール】
-- commentは必ずユーザーの投稿内容・キーワード・感情に直接反応すること
-- 「すごいですね！」「いいですね！」のような投稿内容と無関係な汎用コメントは禁止
-- 自然な日本語口語で、SNSらしい短め〜中程度の長さにすること
-- nameは日本語、idは@英数字のみ、avatarは絵文字1個
-
-出力: {"replies": [...]} 形式のJSONのみ。説明文不要。
-例: {"replies":[{"name":"象のり造","id":"@zou","avatar":"🐘","comment":"カレーって最高だよな！スパイスの香りがたまらん🍛","likes":2341}]}`;
+## 出力形式（このJSONのみ返すこと）
+{"replies":[{"name":"日本語の名前","id":"@英数字","avatar":"絵文字1個","comment":"投稿内容に反応したコメント","likes":整数}]}`;
 }
 
-// ★ user ロールに渡すメッセージ: 投稿テキストを明確に指定
-function replyUserMsg(postText) {
-  return `以下のSNS投稿に、上記の指示に従ってキャラクターたちが返信してください:
-
-「${postText}」`;
-}
-
-function timelinePrompt(interests, mode) {
+function buildTimelinePrompt(interests, mode) {
   const int = interests.length ? interests.join('、') : '未設定';
-  return `あなたは日本語SNS「いどばた」のAIです。
-趣味: ${int} / モード: ${mode}
-趣味に関連したSNS投稿を6〜8件生成してください。
-各投稿のフィールド: name, id(@英数字), avatar(絵文字1個), comment(ハッシュタグOK), likes(100〜50000)
-必ず {"posts": [...]} の形式のJSONで返してください。説明文は不要です。`;
+  const modeLabel = { influencer:'インフルエンサー', mental:'メンタルケア', debate:'ディベート', legend:'レジェンドトーク' }[mode] || mode;
+  return `## タスク
+日本語SNS「いどばた」(モード: ${modeLabel})のタイムライン投稿を6〜8件生成してください。
+
+## 条件
+- ユーザーの趣味: ${int}
+- 趣味に直接関連した具体的な内容の投稿（汎用的な内容は不可）
+- 各投稿は個性的なSNSユーザーらしい口語で
+
+## 出力形式（このJSONのみ返すこと）
+{"posts":[{"name":"日本語の名前","id":"@英数字","avatar":"絵文字1個","comment":"投稿内容","likes":整数}]}`;
 }
 
 // ===== HTTPサーバー =====
@@ -268,11 +277,7 @@ http.createServer(async (req, res) => {
       const vm = ['influencer','mental','debate','legend'].includes(mode) ? mode : 'influencer';
       console.log(`[reply] mode=${vm} ip=${ip} text="${text.slice(0,40)}"`);
 
-      // ★構造修正: system=静的指示、user=投稿テキスト（AIが返信対象と認識する正しい設計）
-      const replies = await callAI(
-        replySystemPrompt(vm, interests),
-        replyUserMsg(text)
-      );
+      const replies = await callAI(buildReplyPrompt(text, vm, interests));
       sendJSON(res, 200, { replies });
     } catch(e) {
       console.error('[reply error]', e.message);
@@ -294,7 +299,7 @@ http.createServer(async (req, res) => {
       const { interests = [], mode = 'influencer' } = await readBody(req);
       console.log(`[timeline] mode=${mode} ip=${ip}`);
 
-      const posts = await callAI(timelinePrompt(interests, mode), 'タイムライン投稿を生成してください。');
+      const posts = await callAI(buildTimelinePrompt(interests, mode));
       sendJSON(res, 200, { posts });
     } catch(e) {
       console.error('[timeline error]', e.message);
