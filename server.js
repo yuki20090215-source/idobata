@@ -2,8 +2,6 @@ const http  = require('http');
 const https = require('https');
 
 const PORT        = process.env.PORT || 3000;
-const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
-const OPENAI_KEY  = process.env.OPENAI_API_KEY || '';
 const GEMINI_KEY  = process.env.GEMINI_API_KEY || '';
 
 // ===== レート制限 =====
@@ -143,31 +141,6 @@ function parseAI(raw) {
 }
 
 // ===== AI呼び出し =====
-async function callOpenAI(sys, userMsg) {
-  const d = await httpsPost('api.openai.com', '/v1/chat/completions',
-    { Authorization: 'Bearer ' + OPENAI_KEY },
-    {
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: sys },
-        { role: 'user',   content: userMsg }
-      ],
-      // ★ JSON モードを有効化: より確実なJSON出力
-      response_format: { type: 'json_object' },
-      max_tokens: 1200,
-      temperature: 0.9
-    });
-  const text = d.choices?.[0]?.message?.content || '{}';
-  // json_objectモードはオブジェクトを返すので、中の配列を取り出す
-  let parsed;
-  try { parsed = JSON.parse(text); } catch(_) { return parseAI(text); }
-  // replies / posts / items など最初に見つかった配列を返す
-  for (const key of Object.keys(parsed)) {
-    if (Array.isArray(parsed[key])) return parsed[key];
-  }
-  return parseAI(text);
-}
-
 async function callGemini(sys, userMsg) {
   const d = await httpsPost(
     'generativelanguage.googleapis.com',
@@ -190,9 +163,8 @@ async function callGemini(sys, userMsg) {
 }
 
 async function callAI(sys, userMsg) {
-  if (AI_PROVIDER === 'gemini' && GEMINI_KEY) return callGemini(sys, userMsg);
-  if (OPENAI_KEY) return callOpenAI(sys, userMsg);
-  throw new Error('APIキーが設定されていません (OPENAI_API_KEY または GEMINI_API_KEY を設定してください)');
+  if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY が設定されていません');
+  return callGemini(sys, userMsg);
 }
 
 // ===== プロンプト =====
@@ -275,8 +247,7 @@ http.createServer(async (req, res) => {
 
   // ヘルスチェック
   if (path === '/api/health') {
-    const hasKey = AI_PROVIDER === 'gemini' ? !!GEMINI_KEY : !!OPENAI_KEY;
-    sendJSON(res, 200, { status: 'ok', provider: AI_PROVIDER, hasKey });
+    sendJSON(res, 200, { status: 'ok', provider: 'gemini', hasKey: !!GEMINI_KEY });
     return;
   }
 
@@ -342,6 +313,6 @@ http.createServer(async (req, res) => {
 
 }).listen(PORT, () => {
   console.log(`✅ いどばたサーバー起動 ポート: ${PORT}`);
-  console.log(`🤖 AI: ${AI_PROVIDER} / キー: ${(AI_PROVIDER==='gemini'?GEMINI_KEY:OPENAI_KEY) ? '設定済み✅' : '未設定❌'}`);
+  console.log(`🤖 AI: Gemini 2.0 Flash / キー: ${GEMINI_KEY ? '設定済み✅' : '未設定❌'}`);
   console.log(`🛡️  レート制限: ${RATE_LIMIT_MAX_REQ}回/${RATE_LIMIT_WINDOW_MS/1000}秒 (per IP)`);
 });
