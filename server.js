@@ -521,6 +521,145 @@ function buildTLPrompt(interests, mode) {
 }
 
 // ===== HTTP\u30B5\u30FC\u30D0\u30FC =====
+
+// ===== \u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u30A8\u30F3\u30B8\u30F3 =====
+function extractKeywords(text) {
+  const tags = (text.match(/#[\w\u3041-\u9FFF]+/g) || []).map(t => t.slice(1));
+  const words = text.replace(/#[\w\u3041-\u9FFF]+/g, '')
+    .split(/[\s\u3001\u3002\uFF01\uFF1F!?\.]+/).filter(w => w.length >= 2);
+  return [...new Set([...tags, ...words])].slice(0, 4);
+}
+
+const TMPL = {
+  influencer: [
+    ['\u8C61\u306E\u308A\u9020','@zou_norizoo','\uD83D\uDC18',
+      ['{kw}\u3063\u3066\u304B\u3088\uFF01\u30D0\u30BA\u308B\u3084\n\u3064\u3084\n\u304B\u3051\u3069\uFF01\uFF01',
+       '\u306A\u3093\u3084{kw}\uFF01\u5168\u529B\u5FDC\u63F4\u3059\u308B\u308F\uFF01',
+       '{kw}\u3092\u8A00\u3048\u308B\u306E\u306F\u304A\u307E\u3048\u3060\u3051\uFF01\u5171\u611F\u3060']],
+    ['\u7B4B\u8089\u5BFF\u559C\u7537','@kinniku_sukio','\uD83D\uDCAA',
+      ['{kw}\u3082\u7B4B\u30C8\u30EC\u3067\u89E3\u6C7A\u3067\u304D\u308B\uFF01\u30D7\u30ED\u30C6\u98F2\u3081',
+       '\u305D\u308C\u306F\u30D7\u30ED\u30C6\u4E0D\u8DB3\u3060\u3002{kw}\u3082\u30D7\u30ED\u30C6\u98F2\u3093\u3067\u89E3\u6C7A',
+       '{kw}\u3092\u8A00\u3048\u308B\u4F53\u529B\u5C0A\u656C\u3059\u308B\uFF01\u82B1\u4E38']],
+    ['\u30C1\u30EF\u30EF\u306B\u306A\u308A\u305F\u3044\u72AC','@want_to_chiwawa','\uD83D\uDC15',
+      ['\u30EF\u30F3\uFF01{kw}\u304D\u305F\uFF01\u3082\u3063\u3068\u805E\u304B\u305B\u3066',
+       '{kw}\u306E\u306B\u304A\u3044\u3092\u304B\u304E\u306B\u3044\u304D\u305F\u3044\uFF01\u30EF\u30F3\u30EF\u30F3',
+       '\u5618\u304B\u3059\u304E\uFF01{kw}\u6700\u9AD8\u3059\u304E\u3066\u30D0\u30EB\u30B9\u304C\u55B3\u308C\u305F']],
+    ['\u5348\u524D3\u6642\u306E\u30E9\u30FC\u30E1\u30F3','@ramen_3am','\uD83C\uDF5C',
+      ['\u6DF1\u591C\u306B{kw}\u3092\u8A00\u3048\u308B\u4EBA\u306B\u60AA\u3044\u4EBA\u306F\u3044\u306A\u3044',
+       '{kw}\u304C\u3042\u308B\u304B\u3089\u30E9\u30FC\u30E1\u30F3\u304C\u3046\u307E\u3044\u3093\u3060',
+       '\u30E9\u30FC\u30E1\u30F3\u98DF\u3079\u306A\u304C\u3089{kw}\u8003\u3048\u308B\u306E\u304C\u6700\u9AD8']],
+    ['\u5375\u304B\u3051\u3054\u98EF\u4FE1\u8005','@tkg_believer','\uD83E\uDD5A',
+      ['{kw}\u306B\u3082TKG\u304C\u5408\u3046\u3093\u3058\u3083\u306A\u3044\u304B',
+       '{kw}\u3060\u3063\u3066\u5375\u304B\u3051\u308C\u3070\u3046\u307E\u3044',
+       '\u5375\u304C\u7389\u306B\u306A\u308B\u3088\u3046\u306B{kw}\u3082\u308F\u305F\u3057\u306E\u5FC3\u3092\u8FEB\u308B']],
+  ],
+  mental: [
+    ['\u30D1\u30BD\u30B3\u30F3\u3081\u304C\u306D','@pasokon_meg','\uD83D\uDC53',
+      ['\u305D\u308C{kw}\u3063\u3066\u3064\u3089\u304B\u3063\u305F\u3060\u308D\u3046\u306A\u3002\u8A71\u3057\u3066\u304F\u308C\u3066\u3042\u308A\u304C\u3068\u3046',
+       '{kw}\u306E\u3053\u3068\u3001\u3061\u3083\u3093\u3068\u53D7\u3051\u53D6\u3063\u305F\u3088\u3002\u7121\u7406\u3057\u306A\u304F\u3066\u3044\u3044',
+       '\u308F\u304B\u308B\u3088\u3002{kw}\u3063\u3066\u305D\u3046\u3044\u3046\u3053\u3068\u3042\u308B\u3088\u306A']],
+    ['\u3054\u98EF\u529B\u58EB','@gohan_riki','\uD83C\uDF5A',
+      ['\u307E\u305A\u98EF\u98DF\u3048\u3002{kw}\u3082\u6E80\u8179\u306A\u308C\u3070\u8EFD\u304F\u306A\u308B',
+       '{kw}\u3067\u3064\u3089\u3044\u3068\u304D\u306F\u3046\u307E\u3044\u3082\u306E\u98DF\u3048\u3002\u5DE8\u4EBA\u306E\u6CD5\u5247',
+       '\u304A\u308C\u3082{kw}\u7CFB\u306F\u5F31\u3044\u3002\u3067\u3082\u98EF\u3060\u3051\u306F\u770C\u304B\u306A\u3044']],
+    ['\u30ED\u30DC\u30C3\u30C8\u30EA\u30AD\u30B7','@robot_riki','\uD83E\uDD16',
+      ['\u30A8\u30E9\u30FC\u691C\u77E5\u3002{kw}\u306B\u3088\u308B\u30B9\u30C8\u30EC\u30B9\u9AD8\u3002\u5FDC\u63F4\u30B9\u30A4\u30C3\u30C1ON',
+       '{kw}\u306E\u30C7\u30FC\u30BF\u89E3\u6790\u4E2D\u2026\u611F\u60C5\u56DE\u8DEF\u306F\u306A\u3044\u304C\u3001\u3042\u306A\u305F\u306E\u3053\u3068\u304C\u6C17\u306B\u306A\u308B',
+       '{kw}\u3067\u82E6\u52B4\u3059\u308B\u307E\u3069\u306E\u7D20\u6674\u3089\u3057\u3055\u3082\u308F\u304B\u308B']],
+    ['\u6DF1\u591C\u306E\u4E3B\u5A66','@shinya_shufu','\uD83C\uDF19',
+      ['\u3053\u3093\u306A\u6642\u9593\u306B{kw}\u3063\u3066\u601D\u3046\u306E\u306F\u3042\u305F\u3057\u3060\u3051\u3058\u3083\u306A\u3044\u3088\u306D',
+       '{kw}\u3063\u3066\u8A00\u8449\u306B\u3059\u308B\u306E\u3001\u52C7\u6C17\u3042\u308B\u306A\u3002\u8A71\u3057\u3066\u304F\u308C\u3066\u3042\u308A\u304C\u3068\u3046',
+       '\u5B50\u3069\u3082\u5BDD\u305F\u5F8C\u306B{kw}\u306E\u6295\u7A3F\u898B\u305F\u3002\u5FC3\u304C\u76F4\u308A\u307E\u3057\u305F']],
+    ['\u5BDD\u8D77\u304D\u306E\u5927\u5B66\u751F','@neoki_daigaku','\uD83D\uDE2A',
+      ['\u307E\u3042{kw}\u304F\u3089\u3044\u306A\u3089\u306A\u3093\u3068\u304B\u306A\u308B\u3063\u3057\u3087',
+       '{kw}\u3063\u3066\u3064\u3089\u3044\u3088\u306A\u3041\u3002\u3067\u3082\u305D\u306E\u6C17\u6301\u3061\u3082\u3063\u3066\u304F']],
+  ],
+  debate: [
+    ['\u5F37\u9762\u304A\u3058\u3055\u3093','@kowamote_oji','\uD83D\uDE24',
+      ['{kw}\u306E\u672C\u8CEA\u3092\u8003\u3048\u305F\u304B\u3002\u7D61\u8AD6\u3067\u8A71\u3059\u306A',
+       '{kw}\u306E\u539F\u56E0\u306B\u76EE\u3092\u5411\u3051\u308D\u3002\u8868\u9762\u3060\u3051\u898B\u308B\u306A',
+       '{kw}\u3001\u9006\u304B\u3089\u898B\u308B\u3068\u5225\u306E\u9762\u304C\u898B\u3048\u308B\u304C\u306A']],
+    ['\u3089\u304F\u3060\u5C0F\u50E7','@rakuda_kozo','\uD83D\uDC2A',
+      ['\u6025\u304C\u306A\u3002{kw}\u3082\u6642\u9593\u304C\u89E3\u6C7A\u3059\u308B',
+       '{kw}\u3092\u81EA\u5206\u3067\u5F90\u3063\u304F\u308A\u8003\u3048\u308B\u3053\u3068\u3092\u304A\u3059\u3059\u3081\u3059\u308B',
+       '\u9162\u9802\u306E\u99F1\u3082\u4E00\u5E74\u3002{kw}\u306F\u3069\u3046\u304B']],
+    ['\u30BF\u30E9\u30D0\u30AC\u30CB','@tarabagani_17','\uD83E\uDD80',
+      ['{kw}\u3063\u3066\u5225\u306E\u8996\u70B9\u304B\u3089\u898B\u308B\u3068\u5B9F\u306F\u3055',
+       '{kw}\u306A\u305C\u305D\u3046\u306A\u306E\u304B\u3068\u601D\u308F\u306A\u3044\u304B',
+       '\u6A2A\u304B\u3089\u5931\u793C\u3059\u308B\u304C{kw}\u306B\u3064\u3044\u3066\u8A00\u308F\u305B\u3066']],
+    ['\u306E\u308A\u3084\u3059','@noriyasu_09','\uD83D\uDE0F',
+      ['{kw}\u3063\u3066\u5B9F\u969B\u88CF\u3082\u3042\u308B\u3088\u306A',
+       '{kw}\u306F\u5426\u5B9A\u3057\u306A\u3044\u3051\u3069\u3001\u81EA\u5206\u306A\u3089\u3053\u3046\u3059\u308B',
+       '{kw}\u306F\u305D\u3093\u306A\u306B\u73CD\u3057\u304F\u306A\u3044\u3093\u3060\u3088\u306A']],
+    ['\u8AD6\u7834\u3057\u305F\u3044\u9AD8\u6821\u751F','@ronpa_koukou','\uD83C\uDFAF',
+      ['\u8AD6\u7406\u7684\u306B{kw}\u306F\u77DB\u76FE\u3057\u3066\u308B\u3002\u524D\u63D0\u304C\u9593\u9055\u3063\u3066\u308B',
+       '{kw}\u306E\u30A8\u30D3\u30C7\u30F3\u30B9\u3092\u63D0\u793A\u3057\u3066\u304F\u308C\u308B\u3068\u8B70\u8AD6\u304C\u6DF1\u307E\u308B',
+       '{kw}\u306B\u3064\u3044\u3066\u8ABF\u3079\u305F\u3089\u9006\u306E\u89B3\u70B9\u306E\u65B9\u304C\u5C11\u6570\u6D3E\u3060\u305C']],
+  ],
+  legend: [
+    ['\u30D6\u30C3\u30C0','@buddha_jp','\uD83E\uDDD8',
+      ['{kw}\u3068\u3044\u3046\u57F7\u7740\u304B\u3089\u96E2\u308C\u3066\u307F\u308B\u3053\u3068\u3002\u5FC3\u304C\u8EFD\u304F\u306A\u308B',
+       '\u82E6\u3057\u307F\u306E\u6839\u306F{kw}\u306B\u3042\u308B\u3067\u306F\u306A\u3044\u3002\u5185\u5074\u3092\u898B\u3088',
+       '{kw}\u304B\u3089\u5B66\u3073\u3001\u6574\u3048\u3001\u8D85\u3048\u308B\u3002\u305D\u308C\u304C\u9053']],
+    ['\u30BD\u30AF\u30E9\u30C6\u30B9','@socrates_jp','\uD83C\uDFDB\uFE0F',
+      ['{kw}\u3068\u306F\u4F55\u304B\u3002\u3082\u3063\u3068\u6DF1\u304F\u8003\u3048\u308B\u3079\u304D\u3067\u306F',
+       '\u308F\u305F\u3057\u306F{kw}\u306B\u3064\u3044\u3066\u7121\u77E5\u3060\u3002\u3057\u304B\u3057\u305D\u308C\u3092\u77E5\u308B\u3053\u3068\u81EA\u4F53\u304C\u77E5\u6075',
+       '\u541B\u306F{kw}\u3092\u672C\u5F53\u306B\u7406\u89E3\u3057\u3066\u3044\u308B\u304B']],
+    ['\u5FB3\u5DDD\u5BB6\u5EB7','@ieyasu_tok','\u2694\uFE0F',
+      ['{kw}\u306B\u9032\u3080\u524D\u306B\u3001\u307E\u305A\u8DB3\u696D\u3081\u3092\u56FA\u3081\u308B\u3053\u3068\u3058\u3083',
+       '{kw}\u3082\u6012\u308A\u3092\u6F38\u3081\u308B\u3053\u3068\u304C\u5927\u4E8B\u3058\u3083\u3002\u4EBA\u751F\u306F\u91CD\u8377',
+       '\u4EBA\u306E\u4E00\u751F\u306F\u9060\u304D\u9053\u3092\u884C\u304F\u3082\u306E\u3002{kw}\u3082\u305D\u306E\u4E00\u6B69']],
+    ['\u7E54\u7530\u4FE1\u9577','@nobunaga_oda','\uD83D\uDD25',
+      ['{kw}\u306B\u7ACB\u3061\u5411\u304B\u3046\u306E\u307F\u3067\u3042\u308B\u3002\u6CA2\u5C71\u4F11\u3059\u306A',
+       '{kw}\u3082\u65E7\u6765\u306E\u6163\u308F\u3057\u304D\u3084\u308A\u65B9\u3092\u7834\u68C4\u3059\u308B\u6A5F\u4F1A',
+       '\u662F\u975E\u3082\u306A\u3057\u3002{kw}\u306B\u6B63\u89E3\u306A\u3069\u306A\u3044\u3002\u81EA\u5206\u304C\u6B63\u3057\u3044\u9053\u3092\u884C\u3051']],
+    ['\u30DE\u30EA\u30FC\u30FB\u30AD\u30E5\u30EA\u30FC','@curie_marie','\u2697\uFE0F',
+      ['{kw}\u306B\u6050\u308C\u308B\u3053\u3068\u306F\u306A\u3044\u3002\u7406\u89E3\u3059\u308B\u3053\u3068\u3060\u3051\u3067\u5341\u5206',
+       '{kw}\u306B\u3064\u3044\u3066\u5C0F\u3055\u306A\u524D\u9032\u3092\u7A4D\u307F\u91CD\u306D\u308B\u3053\u3068',
+       '\u79D1\u5B66\u8005\u306F{kw}\u306B\u8AB2\u984C\u3092\u898B\u3044\u3060\u3059\u3002\u305D\u308C\u304C\u539F\u52D5\u529B']],
+  ]
+};
+
+function tRand(seed) {
+  let s = (seed >>> 0) || 12345;
+  return function() { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (s >>> 0) / 0xFFFFFFFF; };
+}
+
+function genFromTemplates(postText, mode) {
+  const kws = extractKeywords(postText);
+  const kw  = kws[0] || postText.slice(0, 6) || '\u305D\u308C';
+  const seed = postText.split('').reduce((a,c,i)=>(a+c.charCodeAt(0)*(i+1))|0, 0);
+  const rand = tRand(seed + (Date.now() % 9999));
+  const pool = TMPL[mode] || TMPL.influencer;
+  const arr  = [...pool].sort(()=>rand()-0.5);
+  const replies = arr.slice(0,5).map(([name,id,avatar,comments])=>({
+    name, id, avatar,
+    comment: comments[Math.floor(rand()*comments.length)].replace(/\{kw\}/g, kw),
+    likes: Math.floor(rand()*8000)+100
+  }));
+  const tlArr = [...pool].sort(()=>rand()-0.5);
+  const timelinePosts = tlArr.slice(0,4).map(([name,id,avatar,comments])=>({
+    name, id, avatar,
+    comment: comments[Math.floor(rand()*comments.length)].replace(/\{kw\}/g, kw),
+    likes: Math.floor(rand()*5000)+50
+  }));
+  return { replies, timelinePosts };
+}
+
+function genTLFromTemplates(interests, mode) {
+  const kw   = (interests[0]||'').replace(/^.+\s/,'').slice(0,6)||'\u305D\u308C\u305E\u308C';
+  const seed = interests.join('').split('').reduce((a,c,i)=>(a+c.charCodeAt(0)*(i+1))|0,0);
+  const rand = tRand(seed + (Date.now() % 9999));
+  const pool = TMPL[mode] || TMPL.influencer;
+  const arr  = [...pool].sort(()=>rand()-0.5);
+  const posts = arr.slice(0,6).map(([name,id,avatar,comments])=>({
+    name, id, avatar,
+    comment: comments[Math.floor(rand()*comments.length)].replace(/\{kw\}/g, kw),
+    likes: Math.floor(rand()*5000)+100
+  }));
+  return { posts };
+}
+
 http.createServer(async (req, res) => {
   const path = req.url.split('?')[0];
   const ip   = req.headers['x-forwarded-for']?.split(',')[0].trim()
@@ -544,10 +683,12 @@ http.createServer(async (req, res) => {
       sendJSON(res, 429, {error:'\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u591A\u3059\u304E\u307E\u3059\u30021\u5206\u5F8C\u306B\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002', replies:[], timelinePosts:[]});
       return;
     }
+    let _postText = '', _postMode = 'influencer';
     try {
       const {text, mode='influencer', interests=[]} = await readBody(req);
       if (!text) { sendJSON(res, 400, {error:'text required', replies:[], timelinePosts:[]}); return; }
       const vm = ['influencer','mental','debate','legend'].includes(mode) ? mode : 'influencer';
+      _postText = text; _postMode = vm;
       console.log(`[post] mode=${vm} text="${text.slice(0,50)}"`);
 
       const prompts = buildClaudePostPrompts(text, vm, interests);
@@ -557,11 +698,8 @@ http.createServer(async (req, res) => {
         timelinePosts: result.timelinePosts || []
       });
     } catch(e) {
-      console.error('[post error]', e.message);
-      if (e.message === 'GEMINI_QUOTA_EXCEEDED')
-        sendJSON(res, 503, {error:'QUOTA_EXCEEDED', replies:[], timelinePosts:[]});
-      else
-        sendJSON(res, 500, {error: e.message, replies:[], timelinePosts:[]});
+      console.warn('[post] API failed, using template engine:', e.message.slice(0,80));
+      sendJSON(res, 200, genFromTemplates(_postText, _postMode));
     }
     return;
   }
@@ -572,15 +710,17 @@ http.createServer(async (req, res) => {
     if (!checkRL('tl_' + ip)) {
       sendJSON(res, 429, {error:'\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u591A\u3059\u304E\u307E\u3059\u3002', posts:[]}); return;
     }
+    let _tlInts = [], _tlMode = 'influencer';
     try {
       const {interests=[], mode='influencer'} = await readBody(req);
+      _tlInts = interests; _tlMode = mode;
       console.log(`[timeline] mode=${mode} ip=${ip}`);
       const tlPrompts = buildClaudeTLPrompts(interests, mode);
       const result = await callAI(tlPrompts.system, tlPrompts.user, buildTLPrompt(interests, mode), TL_SCHEMA);
       sendJSON(res, 200, {posts: result.posts || []});
     } catch(e) {
-      console.error('[timeline error]', e.message);
-      sendJSON(res, e.message === 'GEMINI_QUOTA_EXCEEDED' ? 503 : 500, {error: e.message, posts:[]});
+      console.warn('[timeline] API failed, using template engine:', e.message.slice(0,80));
+      sendJSON(res, 200, genTLFromTemplates(_tlInts || [], _tlMode || 'influencer'));
     }
     return;
   }
