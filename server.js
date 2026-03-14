@@ -125,13 +125,32 @@ async function callGemini(prompt, schema) {
 
 // ---- \u7D71\u5408\u547C\u3073\u51FA\u3057: Claude\u512A\u5148 \u2192 Gemini\u30D5\u30A9\u30FC\u30EB\u30D0\u30C3\u30AF ----
 async function callAI(systemPrompt, userPrompt, geminiPrompt, schema) {
+  // Claude\u3042\u308A\u306A\u3089\u307E\u305FClaudeを試みる。失敗時はGeminiにフォールバック
   if (CLAUDE_KEY) {
-    return callClaude(systemPrompt, userPrompt);
+    try {
+      return await callClaude(systemPrompt, userPrompt);
+    } catch(e) {
+      // \u30AF\u30EC\u30B8\u30C3\u30C8\u4E0D\u8DB3\u30FB\u8A8D\u8A3C\u30A8\u30E9\u30FC\u306A\u3069\u306F\u30B9\u30AD\u30C3\u30D7\u3057\u3066Gemini\u3078
+      const msg = e.message || '';
+      const isAuthErr = msg.includes('credit balance') ||
+                        msg.includes('HTTP 400') ||
+                        msg.includes('HTTP 401') ||
+                        msg.includes('HTTP 403') ||
+                        msg.includes('insufficient_quota');
+      if (isAuthErr) {
+        console.warn('[callAI] Claude\u30AF\u30EC\u30B8\u30C3\u30C8\u4E0D\u8DB3 \u2192 Gemini\u30D5\u30A9\u30FC\u30EB\u30D0\u30C3\u30AF:', msg.slice(0,100));
+      } else {
+        console.warn('[callAI] Claude\u30A8\u30E9\u30FC \u2192 Gemini\u30D5\u30A9\u30FC\u30EB\u30D0\u30C3\u30AF:', msg.slice(0,100));
+      }
+      // Gemini\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u308C\u3070\u30D5\u30A9\u30FC\u30EB\u30D0\u30C3\u30AF
+      if (GEMINI_KEY) return callGemini(geminiPrompt, schema);
+      throw e; // Gemini\u3082\u306A\u3051\u308C\u3070\u30A8\u30E9\u30FC\u3092\u518D\u30B9\u30ED\u30FC
+    }
   }
   if (GEMINI_KEY) {
     return callGemini(geminiPrompt, schema);
   }
-  throw new Error('API\u30AD\u30FC\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF08ANTHROPIC_API_KEY \u307E\u305F\u306F GEMINI_API_KEY\uFF09');
+  throw new Error('\u30A2\u30AF\u30C6\u30A3\u30D6\u306AAPI\u30AD\u30FC\u304C\u3042\u308A\u307E\u305B\u3093\u3002ANTHROPIC_API_KEY\u307E\u305F\u306FGEMINI_API_KEY\u3092\u8A2D\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044\u3002');
 }
 
 // ===== AI\u30EC\u30B9\u30DD\u30F3\u30B9\u306E\u30D1\u30FC\u30B9\uFF08\u591A\u6BB5\u968E\u30D5\u30A9\u30FC\u30EB\u30D0\u30C3\u30AF\uFF09=====
