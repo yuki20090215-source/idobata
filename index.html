@@ -1,1 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>いどばた</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS変数 ===== */
+:root{
+  --bg:#0f0f13;--sf:#1a1a22;--sf2:#22222e;--bd:#2e2e3e;
+  --tx:#f0f0f5;--sub:#8888aa;--like:#ff4488;--acc:#ff6b35;
+  --fn:'Noto Sans JP',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f5f5f7;--sf:#ffffff;--sf2:#ebebf0;--bd:#d8d8e8;
+  --tx:#111122;--sub:#666688;
+}
+/* ===== リセット ===== */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh;display:flex;justify-content:center;transition:background .25s,color .25s;}
+button,input,textarea{font-family:var(--fn);}
+button{cursor:pointer;border:none;background:none;}
+a{text-decoration:none;color:inherit;}
 
+/* ===== アプリ枠 ===== */
+.app{width:390px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;}
+@media(max-width:420px){.app{width:100vw;}}
+
+/* ===== スクリーン切替 ===== */
+.screen{display:none;flex-direction:column;flex:1;}
+.screen.active{display:flex;}
+
+/* ===== ローディングオーバーレイ ===== */
+.overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;gap:18px;transition:opacity .3s;}
+.overlay.hide{display:none;}
+.ov-logo{font-size:36px;font-weight:900;letter-spacing:-1.5px;}
+.ov-logo em{color:var(--acc);font-style:normal;}
+.ov-sub{font-size:13px;color:var(--sub);}
+.spinner{width:38px;height:38px;border:3px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== セットアップ画面 ===== */
+#setupScreen{overflow-y:auto;padding-bottom:60px;}
+.s-hero{text-align:center;padding:56px 24px 28px;background:linear-gradient(180deg,var(--sf) 0%,var(--bg) 100%);}
+.s-logo{font-size:46px;font-weight:900;letter-spacing:-2px;margin-bottom:8px;}
+.s-logo em{color:var(--acc);font-style:normal;}
+.s-catchcopy{font-size:14px;color:var(--sub);line-height:1.9;}
+.s-mascot{font-size:68px;margin:14px 0 0;}
+.s-body{padding:24px 20px 0;}
+.s-desc{font-size:13px;color:var(--sub);line-height:1.9;text-align:center;margin-bottom:24px;}
+.s-sec{margin-bottom:22px;}
+.s-lbl{font-size:10.5px;font-weight:700;color:var(--sub);letter-spacing:1.8px;text-transform:uppercase;margin-bottom:8px;}
+.s-inp{width:100%;background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:13px 16px;color:var(--tx);font-size:15px;outline:none;transition:border-color .2s;}
+.s-inp:focus{border-color:var(--acc);}
+.s-inp::placeholder{color:var(--sub);}
+/* アバター選択 */
+.av-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.av-item{width:52px;height:52px;border-radius:50%;background:var(--sf);border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .2s;}
+.av-item.sel{border-color:var(--acc);background:rgba(255,107,53,.15);transform:scale(1.1);}
+/* 興味タグ */
+.int-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.int-tag{padding:7px 14px;border-radius:20px;border:1.5px solid var(--bd);font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .2s;}
+.int-tag.sel{border-color:var(--acc);color:var(--acc);background:rgba(255,107,53,.1);}
+/* 開始ボタン */
+.s-btn{width:100%;padding:15px;border-radius:14px;background:var(--acc);color:#fff;font-size:16px;font-weight:900;margin-top:8px;transition:transform .15s,opacity .15s;}
+.s-btn:hover{transform:translateY(-2px);}
+.s-btn:active{transform:translateY(0);}
+.s-btn:disabled{opacity:.4;transform:none;cursor:not-allowed;}
+
+/* ===== メイン画面 ===== */
+#mainScreen{height:100vh;overflow:hidden;}
+/* ヘッダー */
+.hdr{flex-shrink:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd);padding:10px 14px 8px;position:sticky;top:0;z-index:100;}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;}
+.hdr-left{display:flex;align-items:center;gap:8px;}
+/* メニューボタン */
+.menu-btn{width:36px;height:36px;border-radius:10px;background:var(--sf);border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:17px;transition:all .2s;flex-shrink:0;}
+.menu-btn:hover{border-color:var(--acc);}
+.logo{font-size:21px;font-weight:900;letter-spacing:-.5px;white-space:nowrap;cursor:pointer;}
+.logo em{color:var(--acc);font-style:normal;}
+.mode-badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--acc);color:#fff;white-space:nowrap;transition:background .3s;margin-top:6px;}
+.hdr-right{display:flex;align-items:center;gap:5px;}
+.nav-btn{width:34px;height:34px;border-radius:50%;background:var(--sf);border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;position:relative;flex-shrink:0;}
+.nav-btn:hover,.nav-btn.on{border-color:var(--acc);background:rgba(255,107,53,.1);}
+.ndot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--like);border:2px solid var(--bg);display:none;}
+.ndot.show{display:block;}
+
+/* ===== パネルシステム ===== */
+.panels{flex:1;overflow:hidden;position:relative;}
+.panel{position:absolute;inset:0;overflow-y:auto;padding-bottom:88px;opacity:0;pointer-events:none;transition:opacity .2s;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
+.panel.on{opacity:1;pointer-events:auto;}
+.panel-hdr{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10;}
+.panel-ttl{font-size:18px;font-weight:900;}
+.panel-act{color:var(--sub);font-size:12px;}
+
+/* ===== 投稿カード ===== */
+.post-card{padding:14px 16px;border-bottom:1px solid var(--bd);transition:background .15s;animation:fadeUp .3s ease;}
+.post-card:hover{background:var(--sf);}
+/* ユーザー自身の投稿は左border付き */
+.post-card.mine{border-left:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 4%,var(--bg));}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.pc-top{display:flex;gap:11px;align-items:flex-start;}
+/* アバター */
+.pc-av{width:44px;height:44px;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:2px solid transparent;}
+.pc-av.mine{border-color:var(--acc);}
+.pc-meta{flex:1;min-width:0;}
+.pc-nr{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:2px;}
+.pc-name{font-size:13px;font-weight:700;}
+.pc-id{font-size:11px;color:var(--sub);}
+/* モードタグ */
+.mtag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;}
+.t-inf{background:rgba(255,107,53,.2);color:#ff6b35;}
+.t-men{background:rgba(91,156,246,.2);color:#5b9cf6;}
+.t-deb{background:rgba(244,63,94,.2);color:#f43f5e;}
+.t-leg{background:rgba(167,139,250,.2);color:#a78bfa;}
+/* 投稿本文 */
+.pc-body{font-size:14px;line-height:1.7;margin:8px 0 10px;word-break:break-word;}
+/* アクションボタン */
+.pc-acts{display:flex;gap:20px;}
+.act{display:flex;align-items:center;gap:5px;color:var(--sub);font-size:12px;cursor:pointer;transition:color .2s;padding:3px 0;background:none;border:none;}
+.act:hover{color:var(--tx);}
+.act.lkd{color:var(--like);}
+.act-ico{font-size:15px;}
+@keyframes lpop{0%{transform:scale(1);}40%{transform:scale(1.5);}100%{transform:scale(1);}}
+.lpop{animation:lpop .3s ease;}
+
+/* ===== コメント欄 ===== */
+.cmt-sec{display:none;background:var(--sf2);border-top:1px solid var(--bd);padding:12px 14px;}
+.cmt-sec.open{display:block;animation:fadeUp .2s ease;}
+.cmt-item{padding:9px 0;border-bottom:1px solid var(--bd);font-size:13px;line-height:1.6;}
+.cmt-item:last-child{border:none;}
+.cmt-who{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--acc);margin-bottom:4px;}
+.cmt-av{font-size:16px;}
+.cmt-add{display:flex;gap:8px;margin-top:10px;}
+.cmt-inp{flex:1;background:var(--bg);border:1.5px solid var(--bd);border-radius:20px;padding:8px 14px;color:var(--tx);font-size:13px;outline:none;transition:border-color .2s;}
+.cmt-inp:focus{border-color:var(--acc);}
+.cmt-inp::placeholder{color:var(--sub);}
+.cmt-snd{width:32px;height:32px;border-radius:50%;background:var(--acc);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ===== ローディングカード ===== */
+.ld-card{padding:14px 16px;border-bottom:1px solid var(--bd);}
+.typing{display:flex;align-items:center;gap:5px;margin-top:6px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--sub);animation:bounce 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-6px);opacity:1;}}
+
+/* ===== 空状態 ===== */
+.empty{text-align:center;padding:64px 28px;color:var(--sub);}
+.empty-ico{font-size:54px;margin-bottom:16px;}
+.empty-ttl{font-size:17px;font-weight:700;color:var(--tx);margin-bottom:10px;}
+.empty-txt{font-size:13px;line-height:1.8;}
+
+/* ===== 通知パネル ===== */
+.notif-item{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;gap:12px;align-items:flex-start;animation:fadeUp .3s ease;}
+.notif-item.unread{background:color-mix(in srgb,var(--acc) 4%,var(--bg));}
+.ni-ico{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ni-body{flex:1;}
+.ni-text{font-size:13px;line-height:1.65;margin-bottom:3px;}
+.ni-time{font-size:11px;color:var(--sub);}
+.no-notif{text-align:center;padding:52px 24px;color:var(--sub);font-size:13px;}
+
+/* ===== トレンドパネル ===== */
+.tr-item{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s;}
+.tr-item:hover{background:var(--sf);}
+.tr-rank{font-size:17px;font-weight:900;color:var(--sub);width:34px;flex-shrink:0;}
+.tr-rank.top{color:var(--acc);}
+.tr-info{flex:1;}
+.tr-tag{font-size:15px;font-weight:700;margin-bottom:2px;}
+.tr-meta{font-size:11px;color:var(--sub);}
+.tr-cnt{font-size:12px;color:var(--sub);}.tr-empty{text-align:center;padding:52px 24px;color:var(--sub);}.tr-empty-ico{font-size:48px;margin-bottom:14px;}.tr-empty-ttl{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:8px;}.tr-empty-txt{font-size:12px;line-height:1.8;}.tr-sec{padding:10px 16px 4px;font-size:10px;font-weight:700;color:var(--sub);letter-spacing:1.5px;border-bottom:1px solid var(--bd);}.tr-src{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;margin-left:4px;}.ts-post{background:rgba(255,107,53,.15);color:var(--acc);}.ts-int{background:rgba(91,156,246,.15);color:#5b9cf6;}.ts-ai{background:rgba(167,139,250,.15);color:#a78bfa;}
+
+/* ===== プロフィールパネル ===== */
+.pr-hero{padding:24px 20px;border-bottom:1px solid var(--bd);display:flex;gap:16px;align-items:center;}
+.pr-av{width:74px;height:74px;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:40px;border:3px solid var(--acc);flex-shrink:0;}
+.pr-name{font-size:22px;font-weight:900;}
+.pr-id{font-size:13px;color:var(--sub);margin-bottom:10px;}
+.pr-stats{display:flex;gap:20px;}
+.stat-n{font-size:17px;font-weight:900;color:var(--acc);}
+.stat-l{font-size:11px;color:var(--sub);}
+.pr-sec{padding:16px 20px;border-bottom:1px solid var(--bd);}
+.pr-stl{font-size:10.5px;font-weight:700;color:var(--sub);letter-spacing:1.8px;margin-bottom:10px;}
+.pr-tags{display:flex;flex-wrap:wrap;gap:7px;}
+.pr-tag{padding:5px 13px;border-radius:20px;border:1.5px solid var(--acc);color:var(--acc);font-size:12px;font-weight:700;}
+.pr-acts{padding:16px 20px;display:flex;flex-direction:column;gap:10px;}
+.pr-btn{padding:13px 16px;border-radius:12px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-size:14px;text-align:left;transition:border-color .2s;}
+.pr-btn:hover{border-color:var(--acc);}
+.pr-btn.danger{color:#f43f5e;border-color:rgba(244,63,94,.3);}
+
+/* ===== 投稿入力バー ===== */
+.compose{position:fixed;bottom:0;width:390px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--bd);padding:10px 14px 12px;z-index:200;}
+@media(max-width:420px){.compose{width:100vw;}}
+.cmp-row{display:flex;gap:9px;align-items:flex-end;}
+.cmp-av{width:36px;height:36px;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid var(--acc);transition:border-color .3s;}
+.cmp-inp{flex:1;background:var(--sf);border:1.5px solid var(--bd);border-radius:22px;padding:10px 16px;color:var(--tx);font-size:14px;resize:none;outline:none;max-height:100px;line-height:1.5;transition:border-color .2s;}
+.cmp-inp:focus{border-color:var(--acc);}
+.cmp-inp::placeholder{color:var(--sub);}
+.snd-btn{width:40px;height:40px;border-radius:50%;background:var(--acc);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.snd-btn:hover{transform:scale(1.08);}
+.snd-btn:active{transform:scale(.96);}
+.snd-btn:disabled{opacity:.4;transform:none;cursor:not-allowed;}
+
+/* ===== モード選択モーダル ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.open{display:flex;animation:bgFade .2s ease;}
+@keyframes bgFade{from{opacity:0;}to{opacity:1;}}
+.mode-sheet{width:390px;background:var(--sf);border-radius:22px 22px 0 0;padding:18px 20px 44px;animation:slideUp .3s cubic-bezier(.22,.61,.36,1);}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+@media(max-width:420px){.mode-sheet{width:100vw;}}
+.sh-bar{width:42px;height:4px;border-radius:2px;background:var(--bd);margin:0 auto 18px;}
+.sh-title{font-size:18px;font-weight:900;margin-bottom:14px;}
+/* モードカード */
+.mode-card{padding:14px 16px;border-radius:14px;border:2px solid var(--bd);margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;}
+.mode-card:hover{border-color:var(--acc);}
+.mode-card.cur{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 6%,var(--sf));}
+.mc-ico{font-size:30px;flex-shrink:0;}
+.mc-name{font-size:15px;font-weight:700;margin-bottom:3px;}
+.mc-desc{font-size:12px;color:var(--sub);line-height:1.5;}
+
+/* ===== トースト ===== */
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:10px 20px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:500;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ===== いいねフロートアニメ ===== */
+.lf{position:fixed;pointer-events:none;font-size:20px;z-index:999;animation:floatUp 1.2s ease forwards;}#imgStrip{position:fixed;bottom:70px;width:390px;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--bd);z-index:199;}@media(max-width:420px){#imgStrip{width:100vw;}}.img-strip{display:flex;gap:7px;overflow-x:auto;padding:8px 14px 4px;scrollbar-width:none;}.img-strip::-webkit-scrollbar{display:none;}.img-thumb{width:64px;height:64px;border-radius:10px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0;}.img-thumb:hover{border-color:var(--acc);transform:scale(1.05);}.img-thumb.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc);}.img-credit{font-size:9px;color:var(--sub);padding:0 14px 6px;}.pc-img{width:100%;border-radius:12px;margin:6px 0 8px;max-height:240px;object-fit:cover;cursor:pointer;}.sync-bar{display:flex;align-items:center;gap:6px;padding:5px 16px;font-size:11px;color:var(--sub);border-bottom:1px solid var(--bd);}.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--sub);}.sync-dot.ok{background:#22c55e;}.sync-dot.err{background:#f43f5e;}.sync-dot.loading{background:#f59e0b;animation:spin .8s linear infinite;}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)scale(1);}100%{opacity:0;transform:translateY(-90px)scale(1.7);}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ローディング -->
+<div class="overlay" id="overlay">
+  <div class="ov-logo">いど<em>ばた</em></div>
+  <div class="spinner"></div>
+  <div class="ov-sub" id="ovTxt">起動中…</div>
+</div>
+
+<!-- ========== セットアップ ========== -->
+<div class="screen" id="setupScreen">
+  <div class="s-hero">
+    <div class="s-logo">いど<em>ばた</em></div>
+    <div class="s-catchcopy">私以外全員AI⁉<br>あなただけの究極にわがままなSNS</div>
+    <div class="s-mascot">🪣</div>
+  </div>
+  <div class="s-body">
+    <p class="s-desc">「いどばた」へようこそ！<br>初期設定をして、あなただけの世界を作ろう。</p>
+    <div class="s-sec">
+      <div class="s-lbl">ユーザー名</div>
+      <input class="s-inp" id="sName" type="text" placeholder="例：井戸端 泰希" maxlength="20" oninput="chkSetup()">
+    </div>
+    <div class="s-sec">
+      <div class="s-lbl">ログインID</div>
+      <input class="s-inp" id="sId" type="text" placeholder="例：idobata_taiki（英数字）" maxlength="20" oninput="chkSetup()">
+    </div>
+    <div class="s-sec">
+      <div class="s-lbl">アバターを選ぶ</div>
+      <div class="av-grid" id="avGrid">
+        <div class="av-item sel" data-av="😊" onclick="selAv(this)">😊</div>
+        <div class="av-item" data-av="😎" onclick="selAv(this)">😎</div>
+        <div class="av-item" data-av="🐶" onclick="selAv(this)">🐶</div>
+        <div class="av-item" data-av="🐱" onclick="selAv(this)">🐱</div>
+        <div class="av-item" data-av="🦊" onclick="selAv(this)">🦊</div>
+        <div class="av-item" data-av="🐸" onclick="selAv(this)">🐸</div>
+        <div class="av-item" data-av="🦄" onclick="selAv(this)">🦄</div>
+        <div class="av-item" data-av="🐼" onclick="selAv(this)">🐼</div>
+        <div class="av-item" data-av="🦁" onclick="selAv(this)">🦁</div>
+        <div class="av-item" data-av="🐯" onclick="selAv(this)">🐯</div>
+        <div class="av-item" data-av="🐻" onclick="selAv(this)">🐻</div>
+        <div class="av-item" data-av="🐨" onclick="selAv(this)">🐨</div>
+      </div>
+    </div>
+    <div class="s-sec">
+      <div class="s-lbl">趣味・興味（複数選択OK）</div>
+      <div class="int-grid">
+        <div class="int-tag" onclick="togInt(this)">🎵 音楽</div>
+        <div class="int-tag" onclick="togInt(this)">🎬 映画</div>
+        <div class="int-tag" onclick="togInt(this)">🎮 ゲーム</div>
+        <div class="int-tag" onclick="togInt(this)">🍳 料理</div>
+        <div class="int-tag" onclick="togInt(this)">💻 テクノロジー</div>
+        <div class="int-tag" onclick="togInt(this)">📚 読書</div>
+        <div class="int-tag" onclick="togInt(this)">✈️ 旅行</div>
+        <div class="int-tag" onclick="togInt(this)">🐾 動物</div>
+        <div class="int-tag" onclick="togInt(this)">⚽ スポーツ</div>
+        <div class="int-tag" onclick="togInt(this)">🌿 ライフスタイル</div>
+        <div class="int-tag" onclick="togInt(this)">🎭 アニメ</div>
+        <div class="int-tag" onclick="togInt(this)">💰 ビジネス</div>
+        <div class="int-tag" onclick="togInt(this)">🌟 推し活</div>
+      </div>
+    </div>
+    <button class="s-btn" id="setupBtn" onclick="doSetup()" disabled>いどばたをはじめる →</button>
+  </div>
+</div>
+
+<!-- ========== メイン ========== -->
+<div class="screen" id="mainScreen" style="height:100vh;overflow:hidden;display:none;flex-direction:column;">
+  <!-- ヘッダー -->
+  <div class="hdr">
+    <div class="hdr-row">
+      <div class="hdr-left">
+        <button class="menu-btn" onclick="openModal()" title="メニュー">☰</button>
+        <div class="logo" onclick="showPanel('timeline')">いど<em>ばた</em></div>
+      </div>
+      <div class="hdr-right">
+        <button class="nav-btn" id="btnTheme" onclick="toggleTheme()" title="テーマ切替">🌙</button>
+        <button class="nav-btn" id="btnNotif" onclick="showPanel('notif')" title="通知">🔔<div class="ndot" id="ndot"></div></button>
+        <button class="nav-btn" id="btnTrends" onclick="showPanel('trends')" title="トレンド">📈</button>
+        <button class="nav-btn" id="btnProfile" onclick="showPanel('profile')" title="プロフィール">👤</button>
+      </div>
+    </div>
+    <div>
+      <div class="mode-badge" id="modeBadge">🔥 インフルエンサー</div>
+    </div>
+  </div>
+
+  <!-- パネル群 -->
+  <div class="sync-bar" id="syncBar" style="display:none"><div class="sync-dot" id="syncDot"></div><span id="syncTxt">Firebase同期</span></div><div class="panels" style="flex:1;overflow:hidden;position:relative;">
+    <!-- タイムライン -->
+    <div class="panel on" id="pTimeline"></div>
+
+    <!-- 通知 -->
+    <div class="panel" id="pNotif">
+      <div class="panel-hdr">
+        <span class="panel-ttl">🔔 通知</span>
+        <button class="panel-act" onclick="clearNotifs()">すべて既読</button>
+      </div>
+      <div id="notifList"></div>
+    </div>
+
+    <!-- トレンド -->
+    <div class="panel" id="pTrends">
+      <div class="panel-hdr"><span class="panel-ttl">📈 トレンド</span><button class="panel-act" onclick="renderTrends()">更新</button></div>
+      <div id="trendsList"></div>
+    </div>
+
+    <!-- プロフィール -->
+    <div class="panel" id="pProfile">
+      <div class="pr-hero">
+        <div class="pr-av" id="prAv">😊</div>
+        <div>
+          <div class="pr-name" id="prName">—</div>
+          <div class="pr-id" id="prId">@—</div>
+          <div class="pr-stats">
+            <div><div class="stat-n" id="stP">0</div><div class="stat-l">投稿</div></div>
+            <div><div class="stat-n" id="stL">0</div><div class="stat-l">いいね</div></div>
+            <div><div class="stat-n" id="stC">0</div><div class="stat-l">コメント</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="pr-sec"><div class="pr-stl">INTERESTS</div><div class="pr-tags" id="prInts"></div></div>
+      <div class="pr-acts">
+        <button class="pr-btn" onclick="editProfile()">✏️ プロフィールを編集</button>
+        <button class="pr-btn danger" onclick="clearAll()">🗑️ データをすべて削除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 投稿入力バー -->
+  <div class="compose" id="compose">
+    <div class="cmp-row">
+      <div class="cmp-av" id="cmpAv">😊</div>
+      <textarea class="cmp-inp" id="postInput" placeholder="いまどんな気持ち？" rows="1"
+        oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+      <button class="nav-btn" onclick="manualImgSearch()" title="画像を検索" style="flex-shrink:0;font-size:16px;">📷</button>
+      <button class="snd-btn" id="sendBtn" onclick="submitPost()" disabled>➤</button>
+    </div>
+  </div>
+</div>
+
+<div id="imgStrip" style="display:none"><div class="img-strip" id="imgList"></div><div class="img-credit" id="imgCredit"></div></div>
+</div><!-- /app -->
+
+<!-- モード選択モーダル -->
+<div class="modal-bg" id="modeModal" onclick="bgClose(event)">
+  <div class="mode-sheet" onclick="event.stopPropagation()">
+    <div class="sh-bar"></div>
+    <div class="sh-title">モードを選択</div>
+    <div class="mode-card cur" data-mode="influencer" onclick="selectMode('influencer')">
+      <div class="mc-ico">🔥</div>
+      <div><div class="mc-name">インフルエンサーモード</div><div class="mc-desc">あなたの投稿にみんなが熱狂！バズり体験をどうぞ</div></div>
+    </div>
+    <div class="mode-card" data-mode="mental" onclick="selectMode('mental')">
+      <div class="mc-ico">💙</div>
+      <div><div class="mc-name">メンタルケアモード</div><div class="mc-desc">誰にも言えない悩みをそっと話してみて</div></div>
+    </div>
+    <div class="mode-card" data-mode="debate" onclick="selectMode('debate')">
+      <div class="mc-ico">⚡</div>
+      <div><div class="mc-name">ディベートモード</div><div class="mc-desc">意見をぶつけよう。議論で思考を深める</div></div>
+    </div>
+    <div class="mode-card" data-mode="legend" onclick="selectMode('legend')">
+      <div class="mc-ico">👑</div>
+      <div><div class="mc-name">レジェンドトークモード</div><div class="mc-desc">歴史上の偉人たちと語り合おう</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="imgStrip" style="display:none"><div class="img-strip" id="imgList"></div><div class="img-credit" id="imgCredit"></div></div><div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+// ===================================================
+//  定数・設定
+// ===================================================
+const STORE_KEY = 'idobata_v6';
+
+// モード設定
+const MC = {
+  influencer:{ label:'インフルエンサー', badge:'🔥 インフルエンサー', acc:'#ff6b35', tc:'t-inf', ph:'バズらせたいことをつぶやいて！' },
+  mental:    { label:'メンタルケア',     badge:'💙 メンタルケア',     acc:'#5b9cf6', tc:'t-men', ph:'悩みを共有…' },
+  debate:    { label:'ディベート',       badge:'⚡ ディベート',       acc:'#f43f5e', tc:'t-deb', ph:'意見をぶつけよう！' },
+  legend:    { label:'レジェンドトーク', badge:'👑 レジェンドトーク', acc:'#a78bfa', tc:'t-leg', ph:'歴史上の人と話そう…' },
+};
+
+// AIキャラ名プール（いいね通知に使用）
+const AI_NAMES = [
+  '象のり造','筋肉寿喜男','チワワになりたい犬','奈良で鹿やってます','毎朝5時起きの男',
+  '卵かけご飯信者','深夜のラーメン哲学者','スーパー銭湯の帝王','コンビニ限定スイーツ部','川沿いジョギング中',
+  'どこでも寝れる男','ひとりカラオケ常連','公園のハト観察員','大盛り無料の存在','電柱の裏の哲学',
+  '近所のスーパー詳しい','メロンソーダ至上主義','バイク乗りたい原付','ゲーセン廃人候補','タピオカ飲み過ぎ警報',
+  'ねこに好かれない犬好き','実家の柴犬のほうが有名','布団から出られない会','昼間から公園いる人','スニーカー沼の住人',
+  'パソコンめがね','ご飯力士','ロボットリキシ','深夜の主婦','寝起きの大学生',
+  '会社帰りの電車','空き地の哲学者','傘を忘れる天才','オムライスで泣いた女','猫と添い寝研究家',
+  '夕方の公園ベンチ','ひとり焼き肉の先駆者','月曜日が怖い人','返信遅くてごめんの人','推しに課金した後悔',
+  '実は寂しいパリピ','メンヘラとは言わせない','泣ける映画専門家','ぬいぐるみと暮らす人','HSPかもしれない普通の人',
+  '強面おじさん','らくだ小僧','タラバガニ','のりやす','論破したい高校生',
+  'Wikipedia依存症','エビデンス持ってきて','反論は正義だと思う人','でも実際どうなの派','それって意味ある？マン',
+  '全部AIのせいにする人','コスパ最強論者','昭和のほうがよかった人','Z世代に物申す人','正論で人を傷つける人',
+  '議論マニアの無職','ファクトチェック警察','匿名で強い人','なんでも数字で語る人','批判的思考の塊',
+  'ブッダ','ソクラテス','徳川家康','クレオパトラ','織田信長',
+  'ナポレオン','エジソン','レオナルド・ダ・ヴィンチ','ジュリアス・シーザー','マリー・キュリー',
+  '孔子','紫式部','坂本龍馬','西郷隆盛','アレキサンダー大王',
+  'マルコ・ポーロ','ガリレオ・ガリレイ','源頼朝','モーツァルト','聖フランチェスコ',
+  '通りすがりのプロ','全部見てた人','なぜか詳しいおじさん','バズりたい会社員','コメ欄の良心',
+  '現実逃避中の社会人','夜更かし同盟会長','お弁当作り忘れた人','自炊失敗歴10年','自転車こぎ過ぎて足パンパン',
+  'ペット動画しか見ない人','推し語りが止まらない','散歩中に哲学する人','階段より絶対エレベーター派','読みかけの本が15冊ある人',
+];
+
+// ===================================================
+//  アプリ状態
+// ===================================================
+let user     = { name:'', id:'', avatar:'😊', interests:[], theme:'dark' };
+// モードごとに独立したタイムライン
+let mPosts   = { influencer:[], mental:[], debate:[], legend:[] };
+let trends   = [];
+let notifs   = [];
+let curMode  = 'influencer';
+let curPanel = 'timeline';
+let busy     = false;
+let pidCtr   = 0;
+let unread   = 0;
+let ltimers  = [];
+let selAv_   = '😊';
+let selImgUrl = '';
+
+// ===================================================
+//  セットアップ
+// ===================================================
+function selAv(el) {
+  document.querySelectorAll('.av-item').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  selAv_ = el.dataset.av;
+}
+function togInt(el) { el.classList.toggle('sel'); }
+function chkSetup() {
+  const n = document.getElementById('sName').value.trim();
+  const i = document.getElementById('sId').value.trim();
+  document.getElementById('setupBtn').disabled = !(n && i);
+}
+
+async function doSetup() {
+  const name = document.getElementById('sName').value.trim();
+  const id   = '@' + document.getElementById('sId').value.trim().replace(/^@/, '');
+  const interests = [...document.querySelectorAll('.int-tag.sel')].map(e => e.textContent.trim());
+  // 本当に新規登録か（既存データがない）かを判定
+  const isNewUser = !user.name;
+  user = { name, id, avatar: selAv_, interests, theme: user.theme || 'dark' };
+  saveData();
+  // 新規ユーザーのみAPIでタイムラインを取得。編集時は既存TLを維持
+  await toMain(isNewUser);
+}
+
+// ===================================================
+//  メイン画面へ移行
+// ===================================================
+async function toMain(isNew = false) {
+  document.getElementById('setupScreen').classList.remove('active');
+  const ms = document.getElementById('mainScreen');
+  ms.classList.add('active');
+  ms.style.display = 'flex';
+  applyMode(curMode);
+  applyTheme(user.theme || 'dark');
+  updCmpAv();
+  renderTL();
+  renderTrends();
+  updProfile();
+  renderNotifs();
+  if (isNew) {
+    reqNotifPerm();
+    // Firebase から既存データを読み込む
+    const fbData = await fbLoad();
+    if (fbData && fbData.pidCtr > pidCtr) {
+      // クラウドのデータの方が新しければマージ
+      mPosts = fbData.mPosts || mPosts;
+      trends = fbData.trends || trends;
+      notifs = fbData.notifs || notifs;
+      pidCtr = fbData.pidCtr || pidCtr;
+      renderTL(); renderTrends(); renderNotifs();
+    }
+    await loadInitTL();
+  }
+  await checkFirebase();
+  hideLd();
+}
+
+// ===================================================
+//  テーマ切替
+// ===================================================
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('btnTheme').textContent = t === 'dark' ? '🌙' : '☀️';
+}
+function toggleTheme() {
+  user.theme = user.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(user.theme);
+  saveData();
+}
+
+// ===================================================
+//  モードモーダル
+// ===================================================
+function openModal() {
+  document.getElementById('modeModal').classList.add('open');
+  document.querySelectorAll('.mode-card').forEach(c =>
+    c.classList.toggle('cur', c.dataset.mode === curMode));
+}
+function bgClose(e) {
+  if (e.target === document.getElementById('modeModal'))
+    document.getElementById('modeModal').classList.remove('open');
+}
+function selectMode(mode) {
+  document.getElementById('modeModal').classList.remove('open');
+  if (mode === curMode) return;
+  curMode = mode;
+  applyMode(mode);
+  showPanel('timeline');
+  saveData();
+}
+function applyMode(mode) {
+  const c = MC[mode];
+  document.documentElement.style.setProperty('--acc', c.acc);
+  document.getElementById('modeBadge').textContent = c.badge;
+  const inp = document.getElementById('postInput');
+  if (inp) inp.placeholder = c.ph;
+  updCmpAv();
+  renderTL(); // モード切替時はそのモードのTLを表示
+}
+
+// ===================================================
+//  パネル切替
+// ===================================================
+function showPanel(name) {
+  curPanel = name;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('compose').style.display = name === 'timeline' ? '' : 'none';
+  ['btnNotif','btnTrends','btnProfile'].forEach(id => document.getElementById(id).classList.remove('on'));
+  const map = { timeline:'pTimeline', notif:'pNotif', trends:'pTrends', profile:'pProfile' };
+  document.getElementById(map[name] || 'pTimeline').classList.add('on');
+  if (name === 'notif')   { document.getElementById('btnNotif').classList.add('on'); markRead(); renderNotifs(); }
+  if (name === 'trends')  { document.getElementById('btnTrends').classList.add('on'); renderTrends(); }
+  if (name === 'profile') { document.getElementById('btnProfile').classList.add('on'); updProfile(); }
+}
+
+// ===================================================
+//  初回タイムライン（起動時のみAPI呼び出し）
+// ===================================================
+async function loadInitTL() {
+  if (!user.interests.length) return;
+  // 既にこのモードのTLにデータがある場合はAPIを呼ばない
+  if (mPosts[curMode] && mPosts[curMode].length > 0) return;
+  showLd('あなたの趣味に合わせたタイムラインを準備中…');
+  try {
+    const r = await fetch('/api/timeline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interests: user.interests, mode: curMode })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const { posts = [] } = await r.json();
+    posts.forEach(p => mPosts[curMode].push(mkAI(p, curMode)));
+    renderTL();
+    saveData();
+    startLikeSim();
+  } catch(e) {
+    console.warn('initTL:', e.message);
+  }
+  hideLd();
+}
+
+// ===================================================
+//  投稿送信
+// ===================================================
+async function submitPost() {
+  const ta = document.getElementById('postInput');
+  const text = ta.value.trim();
+  if (!text || busy) return;
+  busy = true;
+  document.getElementById('sendBtn').disabled = true;
+  ta.value = ''; ta.style.height = 'auto';
+  showPanel('timeline');
+
+  // ユーザー投稿をタイムラインに追加
+  const pid = ++pidCtr;
+  const imgUrl = selImgUrl;
+  const up = {
+    id: pid, type: 'user', text,
+    name: user.name, uid: user.id, avatar: user.avatar,
+    mode: curMode, likes: 0, liked: false, comments: [], ts: Date.now(),
+    img: imgUrl
+  };
+  selImgUrl = '';
+  document.getElementById('imgStrip').style.display = 'none';
+  document.getElementById('imgList').innerHTML = '';
+  adjustPanelPb(false);
+
+  mPosts[curMode].push(up);
+  renderTL();
+
+  // ローディングカードを3枚表示
+  const lids = ['a','b','c'].map(x => `ld-${pid}-${x}`);
+  lids.forEach(id => addLdCard(id));
+  scrollBot();
+
+  try {
+    const r = await fetch('/api/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: curMode, interests: user.interests })
+    });
+    if (!r.ok) {
+      if (r.status === 429) throw new Error('RATE_LIMIT');
+      const d = await r.json().catch(() => ({}));
+      if (d.error === 'QUOTA_EXCEEDED') throw new Error('QUOTA_EXCEEDED');
+      throw new Error('HTTP_' + r.status);
+    }
+    const { replies = [], timelinePosts = [] } = await r.json();
+
+    // ローディング削除
+    lids.forEach(id => document.getElementById(id)?.remove());
+
+    // replies → コメント欄に格納（タイムラインには出さない）
+    if (replies.length) {
+      up.comments.push(...replies.map(r => ({
+        a: r.name, t: r.comment, av: r.avatar || '🤖', lk: r.likes || 0
+      })));
+      const cc = document.getElementById('cc-' + pid);
+      if (cc) cc.textContent = up.comments.length;
+    }
+
+    // timelinePosts → タイムラインに流れるAIのつぶやき
+    timelinePosts.forEach((p, i) => {
+      const ap = mkAI(p, curMode);
+      mPosts[curMode].push(ap);
+      setTimeout(() => { appendCard(ap); scrollBot(); }, i * 200 + 100);
+    });
+
+    addHashtags(text);
+    scheduleAutoLikes(pid);
+    setTimeout(() => { saveData(); renderTrends(); }, 1500);
+
+  } catch(err) {
+    lids.forEach(id => document.getElementById(id)?.remove());
+    const fb = getFallback(curMode);
+    if (err.message === 'RATE_LIMIT') {
+      toast('⚠️ 少し待ってから投稿してください');
+    } else if (err.message === 'QUOTA_EXCEEDED') {
+      toast('😔 AIの利用上限に達しました。しばらく後で');
+      up.comments.push(...fb.map(r => ({ a:r.name, t:r.comment, av:r.avatar||'🤖', lk:r.likes||0 })));
+      document.getElementById('cc-'+pid)?.textContent !== undefined &&
+        (document.getElementById('cc-'+pid).textContent = up.comments.length);
+    } else {
+      console.warn('API error:', err.message);
+      up.comments.push(...fb.map(r => ({ a:r.name, t:r.comment, av:r.avatar||'🤖', lk:r.likes||0 })));
+      const cc = document.getElementById('cc-'+pid);
+      if (cc) cc.textContent = up.comments.length;
+    }
+    scheduleAutoLikes(pid);
+    saveData();
+  }
+
+  busy = false;
+  document.getElementById('sendBtn').disabled = document.getElementById('postInput').value.trim() === '';
+  saveData();
+}
+
+// ===================================================
+//  ヘルパー: AI投稿オブジェクト生成
+// ===================================================
+function mkAI(p, mode) {
+  return {
+    id: ++pidCtr, type: 'ai',
+    text: p.comment, name: p.name, uid: p.id || '',
+    avatar: p.avatar || '🌟', mode,
+    likes: p.likes || Math.floor(Math.random() * 5000) + 10,
+    liked: false, comments: [], ts: Date.now()
+  };
+}
+
+// ===================================================
+//  タイムライン描画
+// ===================================================
+function renderTL() {
+  const panel = document.getElementById('pTimeline');
+  const posts = mPosts[curMode] || [];
+  if (!posts.length) {
+    panel.innerHTML = '<div class="empty"><div class="empty-ico">🪣</div><div class="empty-ttl">井戸端会議へようこそ！</div><div class="empty-txt">何でもつぶやいてみよう。<br>AIたちが必ず反応してくれるよ✨</div></div>';
+    return;
+  }
+  panel.innerHTML = '';
+  posts.forEach(p => appendCard(p, false));
+}
+
+function appendCard(p, anim = true) {
+  const panel = document.getElementById('pTimeline');
+  panel.querySelector('.empty')?.remove();
+  const d = document.createElement('div');
+  d.className = 'post-card' + (p.type === 'user' ? ' mine' : '');
+  d.id = 'pc-' + p.id;
+  if (!anim) d.style.animationDuration = '0s';
+  const c = MC[p.mode] || MC.influencer;
+  const tag = p.type === 'ai' ? `<span class="mtag ${c.tc}">${c.badge}</span>` : '';
+  const li  = p.liked ? '❤️' : '🤍';
+  d.innerHTML = `
+    <div class="pc-top">
+      <div class="pc-av${p.type==='user'?' mine':''}">${p.avatar}</div>
+      <div class="pc-meta">
+        <div class="pc-nr">
+          <span class="pc-name"${p.type==='user'?' style="color:var(--acc)"':''}>${esc(p.name)}</span>
+          <span class="pc-id">${esc(p.uid)}</span>${tag}
+        </div>
+      </div>
+    </div>
+    <div class="pc-body">${esc(p.text)}</div>
+    ${p.img ? `<img class="pc-img" src="${esc(p.img)}" loading="lazy" onclick="window.open('${esc(p.img)}','_blank')" alt="post image">` : ''}
+    <div class="pc-acts">
+      <button class="act" onclick="togCmt(${p.id})">
+        <span class="act-ico">💬</span><span id="cc-${p.id}">${p.comments?.length||0}</span>
+      </button>
+      <button class="act${p.liked?' lkd':''}" id="lb-${p.id}" onclick="togLike(${p.id})">
+        <span id="li-${p.id}">${li}</span><span id="lc-${p.id}">${fmt(p.likes)}</span>
+      </button>
+    </div>
+    <div class="cmt-sec" id="cw-${p.id}">
+      <div id="cl-${p.id}">${renderCmts(p.comments)}</div>
+      <div class="cmt-add">
+        <input class="cmt-inp" id="ci-${p.id}" placeholder="コメントを入力…" onkeydown="cmtKey(event,${p.id})">
+        <button class="cmt-snd" onclick="addCmt(${p.id})">➤</button>
+      </div>
+    </div>`;
+  panel.appendChild(d);
+}
+
+function addLdCard(lid) {
+  const panel = document.getElementById('pTimeline');
+  panel.querySelector('.empty')?.remove();
+  const d = document.createElement('div');
+  d.className = 'ld-card'; d.id = lid;
+  d.innerHTML = '<div class="pc-top"><div class="pc-av">⏳</div><div class="pc-meta"><div class="pc-nr"><span class="pc-name" style="color:var(--sub)">考え中…</span></div></div></div><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  panel.appendChild(d);
+}
+
+function renderCmts(cmts) {
+  if (!cmts?.length) return '';
+  return cmts.map(c => `
+    <div class="cmt-item">
+      <div class="cmt-who"><span class="cmt-av">${c.av||'🤖'}</span>${esc(c.a)}</div>
+      <div>${esc(c.t)}</div>
+    </div>`).join('');
+}
+
+// ===================================================
+//  インタラクション
+// ===================================================
+function togLike(pid) {
+  const p = findPost(pid); if (!p) return;
+  p.liked = !p.liked; p.likes += p.liked ? 1 : -1;
+  const btn = document.getElementById('lb-'+pid);
+  if (btn) {
+    btn.className = 'act' + (p.liked ? ' lkd' : '');
+    btn.innerHTML = `<span id="li-${pid}">${p.liked?'❤️':'🤍'}</span><span id="lc-${pid}">${fmt(p.likes)}</span>`;
+    if (p.liked) { btn.classList.add('lpop'); setTimeout(() => btn.classList.remove('lpop'), 400); }
+  }
+  if (p.liked) showLikeFloat();
+  saveData();
+}
+function findPost(pid) {
+  for (const arr of Object.values(mPosts)) {
+    const p = arr.find(x => x.id === pid);
+    if (p) return p;
+  }
+  return null;
+}
+function togCmt(pid) { document.getElementById('cw-'+pid)?.classList.toggle('open'); }
+function cmtKey(e, pid) { if (e.key === 'Enter') addCmt(pid); }
+function addCmt(pid) {
+  const inp = document.getElementById('ci-'+pid); if (!inp) return;
+  const t = inp.value.trim(); if (!t) return;
+  const p = findPost(pid); if (!p) return;
+  p.comments.push({ a: user.name || 'あなた', t, av: user.avatar });
+  inp.value = '';
+  const cl = document.getElementById('cl-'+pid);
+  if (cl) cl.innerHTML = renderCmts(p.comments);
+  const cc = document.getElementById('cc-'+pid);
+  if (cc) cc.textContent = p.comments.length;
+  saveData(); toast('💬 コメントしました！');
+}
+
+// ===================================================
+//  自動いいねシミュレーション
+// ===================================================
+function scheduleAutoLikes(pid) {
+  [
+    {d:20000, mn:2, mx:15},
+    {d:70000, mn:8, mx:60},
+    {d:200000, mn:25, mx:180},
+    {d:450000, mn:60, mx:450},
+    {d:800000, mn:120, mx:1000},
+  ].forEach(({d, mn, mx}) => {
+    ltimers.push(setTimeout(() =>
+      autoLike(pid, Math.floor(Math.random() * (mx - mn) + mn)),
+      d + Math.random() * 15000));
+  });
+}
+
+function autoLike(pid, cnt) {
+  const p = findPost(pid); if (!p) return;
+  p.likes += cnt;
+  const lc = document.getElementById('lc-'+pid);
+  if (lc) lc.textContent = fmt(p.likes);
+  const lb = document.getElementById('lb-'+pid);
+  if (lb) { lb.classList.add('lpop'); setTimeout(() => lb.classList.remove('lpop'), 400); }
+  const who = AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
+  const msg = cnt >= 50
+    ? `🔥 ${who}さんほか${fmt(cnt)}人があなたの投稿をいいね！`
+    : `❤️ ${who}さんがいいねしました`;
+  addNotif(msg, p.text);
+  pushNotif('いどばた通知', msg);
+  showLikeFloat();
+  saveData();
+}
+
+function startLikeSim() {
+  ltimers.push(setInterval(() => {
+    const all = Object.values(mPosts).flat().filter(p => p.type === 'user');
+    if (!all.length) return;
+    autoLike(all[Math.floor(Math.random() * all.length)].id,
+             Math.floor(Math.random() * 30) + 1);
+  }, 90000 + Math.random() * 90000));
+}
+
+function showLikeFloat() {
+  const el = document.createElement('div');
+  el.className = 'lf'; el.textContent = '❤️';
+  el.style.left = (80 + Math.random() * 200) + 'px';
+  el.style.bottom = '100px';
+  document.getElementById('app').appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ===================================================
+//  通知
+// ===================================================
+function reqNotifPerm() {
+  if ('Notification' in window && Notification.permission === 'default')
+    Notification.requestPermission();
+}
+function pushNotif(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted')
+    try { new Notification(title, {body}); } catch(e) {}
+}
+function addNotif(text, postText = '') {
+  notifs.unshift({
+    text,
+    pt: postText.slice(0, 30) + (postText.length > 30 ? '…' : ''),
+    ts: Date.now(), read: false
+  });
+  unread++;
+  document.getElementById('ndot').classList.add('show');
+  if (curPanel === 'notif') renderNotifs();
+  saveData();
+}
+function renderNotifs() {
+  const list = document.getElementById('notifList');
+  if (!notifs.length) { list.innerHTML = '<div class="no-notif">まだ通知はありません</div>'; return; }
+  list.innerHTML = notifs.slice(0, 30).map(n => `
+    <div class="notif-item${n.read ? '' : ' unread'}">
+      <div class="ni-ico">${n.text.startsWith('🔥') ? '🔥' : '❤️'}</div>
+      <div class="ni-body">
+        <div class="ni-text">${esc(n.text)}</div>
+        <div class="ni-time">${n.pt ? `「${esc(n.pt)}」への反応 · ` : ''}${timeAgo(n.ts)}</div>
+      </div>
+    </div>`).join('');
+}
+function markRead() {
+  notifs.forEach(n => n.read = true); unread = 0;
+  document.getElementById('ndot').classList.remove('show');
+  saveData();
+}
+function clearNotifs() {
+  notifs = []; unread = 0;
+  document.getElementById('ndot').classList.remove('show');
+  renderNotifs(); saveData();
+}
+
+// ===================================================
+//  トレンド
+// ===================================================
+// ===================================================
+//  トレンド（ユーザー投稿＋興味のみ）
+// ===================================================
+function addHashtags(text) {
+  (text.match(/#[\w\u3000-\u9FFF\uF900-\uFAFF]+/g) || []).forEach(tag => {
+    const ex = trends.find(t => t.tag === tag);
+    if (ex) { ex.cnt++; ex.lastSeen = Date.now(); }
+    else trends.push({tag, cnt:1, mode:curMode, src:'post', lastSeen:Date.now()});
+  });
+}
+
+function buildTrendsData() {
+  const result = [];
+  const seen = new Set();
+
+  // ① ユーザーの投稿テキストから抽出したハッシュタグ
+  Object.values(mPosts).flat()
+    .filter(p => p.type === 'user')
+    .forEach(p => {
+      (p.text.match(/#[\w\u3000-\u9FFF\uF900-\uFAFF]+/g) || []).forEach(tag => {
+        if (seen.has(tag)) { const ex=result.find(t=>t.tag===tag); if(ex)ex.cnt++; return; }
+        seen.add(tag);
+        const stored = trends.find(t => t.tag === tag);
+        result.push({tag, cnt: stored ? stored.cnt : 1, src:'post', mode: p.mode});
+      });
+    });
+
+  // ② trendsに蓄積されたハッシュタグ（投稿時にaddHashtagsで追加されたもの）
+  trends.forEach(t => {
+    if (!seen.has(t.tag)) {
+      seen.add(t.tag);
+      result.push({...t, src: t.src||'post'});
+    }
+  });
+
+  // ③ ユーザーの興味タグ（投稿がない場合でも表示）
+  (user.interests || []).forEach(int => {
+    const tag = '#' + int.replace(/^[\s\S]+\s/, '').trim();
+    if (!tag || tag === '#' || seen.has(tag)) return;
+    seen.add(tag);
+    result.push({tag, cnt: 0, src:'int', mode: curMode});
+  });
+
+  return result.sort((a, b) => b.cnt - a.cnt);
+}
+
+function renderTrends() {
+  const list = document.getElementById('trendsList');
+  const data = buildTrendsData();
+
+  if (!data.length) {
+    list.innerHTML = `
+      <div class="tr-empty">
+        <div class="tr-empty-ico">📈</div>
+        <div class="tr-empty-ttl">まだトレンドがありません</div>
+        <div class="tr-empty-txt">投稿に #ハッシュタグ を付けると<br>ここに集計されます。<br>興味タグも登録しておくとすぐに表示されます✨</div>
+      </div>`;
+    return;
+  }
+
+  const ml = {influencer:'インフルエンサー',mental:'メンタルケア',debate:'ディベート',legend:'レジェンドトーク'};
+  const srcLabel = {post:'あなたの投稿', int:'あなたの興味', ai:'AIつぶやき'};
+  const srcCls   = {post:'ts-post', int:'ts-int', ai:'ts-ai'};
+
+  // 投稿タグと興味タグをセクション分け
+  const postTags = data.filter(t => t.src === 'post' || t.src === 'ai');
+  const intTags  = data.filter(t => t.src === 'int');
+
+  let html = '';
+
+  if (postTags.length) {
+    html += '<div class="tr-sec">📝 投稿から</div>';
+    postTags.slice(0, 10).forEach((t, i) => {
+      html += `
+        <div class="tr-item" onclick="useTrend('${t.tag.replace(/'/g,"\\'")}')">
+          <div class="tr-rank${i < 3 ? ' top' : ''}">${i+1}</div>
+          <div class="tr-info">
+            <div class="tr-tag">${esc(t.tag)}</div>
+            <div class="tr-meta">${ml[t.mode]||t.mode} <span class="tr-src ${srcCls[t.src]||'ts-post'}">${srcLabel[t.src]||''}</span></div>
+          </div>
+          <div class="tr-cnt">${t.cnt > 0 ? fmt(t.cnt)+'件' : '—'}</div>
+        </div>`;
+    });
+  }
+
+  if (intTags.length) {
+    html += '<div class="tr-sec">💡 あなたの興味</div>';
+    intTags.forEach((t, i) => {
+      html += `
+        <div class="tr-item" onclick="useTrend('${t.tag.replace(/'/g,"\\'")}')">
+          <div class="tr-rank" style="color:var(--sub)">—</div>
+          <div class="tr-info">
+            <div class="tr-tag">${esc(t.tag)}</div>
+            <div class="tr-meta"><span class="tr-src ts-int">あなたの興味</span></div>
+          </div>
+          <div class="tr-cnt" style="color:var(--acc);font-size:11px;">タップして投稿</div>
+        </div>`;
+    });
+  }
+
+  list.innerHTML = html;
+}
+function useTrend(tag) {
+  showPanel('timeline');
+  const inp = document.getElementById('postInput');
+  if (inp) { inp.value = tag + ' '; inp.focus(); document.getElementById('sendBtn').disabled = false; }
+}
+
+// ===================================================
+//  プロフィール
+// ===================================================
+function updProfile() {
+  document.getElementById('prAv').textContent   = user.avatar || '😊';
+  document.getElementById('prName').textContent = user.name   || '—';
+  document.getElementById('prId').textContent   = user.id     || '@—';
+  const all = Object.values(mPosts).flat();
+  document.getElementById('stP').textContent = all.filter(p => p.type === 'user').length;
+  document.getElementById('stL').textContent = fmt(all.reduce((s,p) => s + (p.liked?1:0), 0));
+  document.getElementById('stC').textContent = all.reduce((s,p) => s + (p.comments?.length||0), 0);
+  document.getElementById('prInts').innerHTML =
+    (user.interests||[]).map(i => `<div class="pr-tag">${esc(i)}</div>`).join('') ||
+    '<span style="color:var(--sub);font-size:13px;">未設定</span>';
+}
+function updCmpAv() {
+  const el = document.getElementById('cmpAv');
+  if (el) el.textContent = user.avatar || '😊';
+}
+function editProfile() {
+  document.getElementById('sName').value = user.name;
+  document.getElementById('sId').value   = user.id.replace('@','');
+  document.querySelectorAll('.av-item').forEach(e => e.classList.toggle('sel', e.dataset.av === user.avatar));
+  document.querySelectorAll('.int-tag').forEach(e => e.classList.toggle('sel', user.interests.includes(e.textContent.trim())));
+  selAv_ = user.avatar;
+  document.getElementById('setupBtn').textContent = '更新する →';
+  document.getElementById('setupBtn').disabled = false;
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('setupScreen').classList.add('active');
+}
+function clearAll() {
+  if (!confirm('すべてのデータを削除しますか？')) return;
+  ltimers.forEach(t => clearTimeout(t)); ltimers = [];
+  localStorage.removeItem(STORE_KEY);
+  mPosts = {influencer:[],mental:[],debate:[],legend:[]};
+  trends = []; notifs = []; pidCtr = 0; unread = 0;
+  user = {name:'',id:'',avatar:'😊',interests:[],theme:user.theme};
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('setupScreen').classList.add('active');
+  ['sName','sId'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('setupBtn').disabled = true;
+  document.getElementById('setupBtn').textContent = 'いどばたをはじめる →';
+  document.querySelectorAll('.int-tag,.av-item').forEach(e => e.classList.remove('sel'));
+  document.querySelector('.av-item').classList.add('sel');
+  selAv_ = '😊';
+}
+
+// ===================================================
+//  フォールバック返信
+// ===================================================
+function getFallback(mode) {
+  const s = {
+    influencer:[
+      {name:'象のり造',id:'@zou',avatar:'🐘',comment:'これはバズるやつ！！完全に同意🔥',likes:2341},
+      {name:'筋肉寿喜男',id:'@kinniku',avatar:'💪',comment:'めちゃくちゃわかる〜！毎日これ思ってた笑',likes:887},
+      {name:'チワワになりたい犬',id:'@chiwawa',avatar:'🐕',comment:'天才か？？SNSに流してほしい',likes:321},
+    ],
+    mental:[
+      {name:'パソコンめがね',id:'@megane',avatar:'👓',comment:'それ、すごく辛かったね。話してくれてありがとう。',likes:102},
+      {name:'ご飯力士',id:'@gohan',avatar:'🍚',comment:'あなたの気持ち、ちゃんと受け取ったよ。無理しないで。',likes:580},
+    ],
+    debate:[
+      {name:'らくだ小僧',id:'@rakuda',avatar:'🐪',comment:'一度は自分で考えることをおすすめします！答えは自分の中にあります。',likes:1572},
+      {name:'強面おじさん',id:'@kowamote',avatar:'😤',comment:'普通にやってても意味ないって思ったらAIに丸投げでもよくね。',likes:294},
+    ],
+    legend:[
+      {name:'ブッダ',id:'@buddha',avatar:'🧘',comment:'「いいね」が欲しくて心がざわつくなら、スマホを置いて目を閉じなさい。',likes:78000},
+      {name:'ソクラテス',id:'@socrates',avatar:'🏛️',comment:'正義とは何ですか？誰か私に教えてくれませんか？',likes:990},
+    ]
+  };
+  return s[mode] || s.influencer;
+}
+
+// ===================================================
+//  ユーティリティ
+// ===================================================
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const sb = document.getElementById('sendBtn');
+    if (!sb.disabled) submitPost();
+  }
+}
+function scrollBot() {
+  const p = document.getElementById('pTimeline');
+  if (p) setTimeout(() => { p.scrollTop = p.scrollHeight; }, 100);
+}
+function fmt(n) {
+  n = Number(n) || 0;
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return n.toLocaleString();
+}
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+function showLd(txt = '') {
+  document.getElementById('overlay').classList.remove('hide');
+  if (txt) document.getElementById('ovTxt').textContent = txt;
+}
+function hideLd() { document.getElementById('overlay').classList.add('hide'); }
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return s + '秒前';
+  if (s < 3600) return Math.floor(s/60) + '分前';
+  if (s < 86400) return Math.floor(s/3600) + '時間前';
+  return Math.floor(s/86400) + '日前';
+}
+
+
+// ===== Unsplash 画像検索 =====
+async function fetchImages(query) {
+  try {
+    const kw = query.replace(/#/g,'').slice(0,30);
+    const r  = await fetch('/api/images?q=' + encodeURIComponent(kw));
+    if (!r.ok) return;
+    const {photos=[]} = await r.json();
+    const strip = document.getElementById('imgStrip');
+    const list  = document.getElementById('imgList');
+    const cred  = document.getElementById('imgCredit');
+    if (!photos.length) { strip.style.display='none'; adjustPanelPb(false); return; }
+    strip.style.display = '';
+    adjustPanelPb(true);
+    list.innerHTML = photos.map(p =>
+      `<img class="img-thumb" src="${p.thumb}" data-url="${p.url}" data-credit="${esc(p.credit)}" onclick="selImg(this)" alt="${esc(p.alt)}" loading="lazy">`
+    ).join('');
+    cred.textContent = '';
+  } catch(e) { /* ignore */ }
+}
+function adjustPanelPb(imgVisible) {
+  // imgStrip表示中はタイムラインの下部余白を増やして隠れないようにする
+  document.querySelectorAll('.panel').forEach(p => {
+    p.style.paddingBottom = imgVisible ? '160px' : '88px';
+  });
+}
+
+function manualImgSearch() {
+  const ta = document.getElementById('postInput');
+  const q  = ta.value.trim() || user.interests[0] || 'nature';
+  fetchImages(q);
+}
+
+function selImg(el) {
+  document.querySelectorAll('.img-thumb').forEach(t => t.classList.remove('sel'));
+  if (selImgUrl === el.dataset.url) {
+    selImgUrl = '';
+    document.getElementById('imgCredit').textContent = '';
+  } else {
+    el.classList.add('sel');
+    selImgUrl = el.dataset.url;
+    document.getElementById('imgCredit').textContent =
+      el.dataset.credit ? 'Photo by ' + el.dataset.credit + ' on Unsplash' : '';
+  }
+}
+
+// ===== Firebase 同期 =====
+let fbEnabled = false;
+async function checkFirebase() {
+  try {
+    const r = await fetch('/api/health');
+    const d = await r.json();
+    fbEnabled = !!d.hasFirebase;
+    const bar = document.getElementById('syncBar');
+    if (fbEnabled) bar.style.display = 'flex';
+  } catch(e) {}
+}
+async function fbSave() {
+  if (!fbEnabled || !user.id) return;
+  setSyncStatus('loading', '同期中...');
+  try {
+    const payload = {user, mPosts, trends, notifs, pidCtr, curMode, unread};
+    const r = await fetch('/api/sync', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-user-id': user.id.replace('@','')},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    setSyncStatus(d.ok ? 'ok' : 'err', d.ok ? '同期済み' : '同期失敗');
+  } catch(e) { setSyncStatus('err', '同期失敗'); }
+}
+async function fbLoad() {
+  if (!fbEnabled || !user.id) return null;
+  setSyncStatus('loading', '読み込み中...');
+  try {
+    const r = await fetch('/api/sync', {
+      headers:{'x-user-id': user.id.replace('@','')}
+    });
+    const d = await r.json();
+    if (d.ok && d.data) {
+      setSyncStatus('ok', '同期済み');
+      return d.data;
+    }
+    setSyncStatus('err', 'データなし');
+    return null;
+  } catch(e) { setSyncStatus('err', '同期失敗'); return null; }
+}
+function setSyncStatus(status, txt) {
+  const dot = document.getElementById('syncDot');
+  const t   = document.getElementById('syncTxt');
+  dot.className = 'sync-dot ' + status;
+  t.textContent = txt;
+}
+
+// ===================================================
+//  保存・読み込み
+// ===================================================
+function saveData() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({user, mPosts, trends, notifs, pidCtr, curMode, unread}));
+  } catch(e) {}
+  // Firebase に非同期でバックアップ
+  if (fbEnabled) clearTimeout(saveData._fb);
+  if (fbEnabled) saveData._fb = setTimeout(fbSave, 3000);
+}
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY); if (!raw) return false;
+    const d = JSON.parse(raw);
+    user   = d.user   || user;
+    mPosts = d.mPosts || {influencer:[],mental:[],debate:[],legend:[]};
+    trends = d.trends || []; notifs = d.notifs || [];
+    pidCtr = d.pidCtr || 0; curMode = d.curMode || 'influencer'; unread = d.unread || 0;
+    return true;
+  } catch(e) { return false; }
+}
+
+// ===================================================
+//  初期化
+// ===================================================
+(function init() {
+  showLd('起動中…');
+  const ok = loadData();
+  if (ok && user.name && user.id) {
+    toMain(false).then(() => {
+      if (unread > 0) document.getElementById('ndot').classList.add('show');
+      if (Object.values(mPosts).flat().some(p => p.type === 'user')) startLikeSim();
+      applyTheme(user.theme || 'dark');
+      applyMode(curMode);
+    });
+  } else {
+    hideLd();
+    document.getElementById('setupScreen').classList.add('active');
+    applyTheme('dark');
+  }
+
+  // 投稿ボタン有効化
+  const ta = document.getElementById('postInput');
+  let imgDebounce;
+  if (ta) ta.addEventListener('input', () => {
+    document.getElementById('sendBtn').disabled = ta.value.trim() === '' || busy;
+    clearTimeout(imgDebounce);
+    if (ta.value.trim().length >= 4) {
+      imgDebounce = setTimeout(() => fetchImages(ta.value.trim()), 800);
+    }
+  });
+
+  // バックグラウンド復帰時のいいね処理
+  let hidAt = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      hidAt = Date.now();
+    } else if (hidAt) {
+      const el = Date.now() - hidAt; hidAt = null;
+      if (el > 10000) {
+        const my = Object.values(mPosts).flat().filter(p => p.type === 'user');
+        const mins = Math.max(1, Math.floor(el / 60000));
+        my.forEach(p => autoLike(p.id, Math.floor(Math.random() * mins * 25) + mins));
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
